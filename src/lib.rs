@@ -8,6 +8,8 @@ pub enum Expr {
     Square(Box<Expr>),
 }
 
+pub enum Operator {}
+
 #[derive(Debug, PartialEq)]
 pub enum EvalError {
     DivideByZero,
@@ -43,41 +45,22 @@ pub enum ParseError {
     NoWordsForThis,
 }
 
+// QUESTION FOR THE PROFESSORS! Why the hell can't we do this?!
+// fn do_stuff(stack: &Vec<Expr>, action: Expr) -> Result<&Vec<Expr>, ParseError> {
+//     if let (Some(first), Some(last)) = (stack.pop(), stack.pop()) {
+//         stack.push(Expr::Addition(Box::new(last), Box::new(first)))
+//     } else {
+//         return Err(ParseError::NoAvailableNumbers);
+//     };
+//     return Ok(stack);
+// }
+
 pub fn parse(input: &str) -> Result<Expr, ParseError> {
     let mut stack: Vec<Expr> = Vec::new();
     for word in input.split_ascii_whitespace() {
         match word.parse::<i64>() {
             Ok(i) => stack.push(Expr::Number(i)),
             Err(_) => match word {
-                // TODO: refactor this up
-                "+" => {
-                    if let (Some(first), Some(last)) = (stack.pop(), stack.pop()) {
-                        stack.push(Expr::Addition(Box::new(last), Box::new(first)))
-                    } else {
-                        return Err(ParseError::NoAvailableNumbers);
-                    };
-                }
-                "-" => {
-                    if let (Some(first), Some(last)) = (stack.pop(), stack.pop()) {
-                        stack.push(Expr::Subtraction(Box::new(last), Box::new(first)))
-                    } else {
-                        return Err(ParseError::NoAvailableNumbers);
-                    };
-                }
-                "*" => {
-                    if let (Some(first), Some(last)) = (stack.pop(), stack.pop()) {
-                        stack.push(Expr::Multiplication(Box::new(last), Box::new(first)))
-                    } else {
-                        return Err(ParseError::NoAvailableNumbers);
-                    };
-                }
-                "/" => {
-                    if let (Some(first), Some(last)) = (stack.pop(), stack.pop()) {
-                        stack.push(Expr::Division(Box::new(last), Box::new(first)))
-                    } else {
-                        return Err(ParseError::NoAvailableNumbers);
-                    };
-                }
                 "sqr" => {
                     if let Some(first) = stack.pop() {
                         stack.push(Expr::Square(Box::new(first)))
@@ -85,7 +68,21 @@ pub fn parse(input: &str) -> Result<Expr, ParseError> {
                         return Err(ParseError::NoAvailableNumbers);
                     };
                 }
-                _ => return Err(ParseError::NoWordsForThis),
+                _ => {
+                    if let (Some(first), Some(last)) = (stack.pop(), stack.pop()) {
+                        match word {
+                            "+" => stack.push(Expr::Addition(Box::new(last), Box::new(first))),
+                            "-" => stack.push(Expr::Subtraction(Box::new(last), Box::new(first))),
+                            "*" => {
+                                stack.push(Expr::Multiplication(Box::new(last), Box::new(first)))
+                            }
+                            "/" => stack.push(Expr::Division(Box::new(last), Box::new(first))),
+                            _ => return Err(ParseError::NoWordsForThis),
+                        }
+                    } else {
+                        return Err(ParseError::NoAvailableNumbers);
+                    }
+                }
             },
         };
     }
