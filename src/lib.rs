@@ -58,17 +58,17 @@ pub enum ParseError {
 pub fn parse(input: &str) -> Result<Expr, ParseError> {
     let mut stack: Vec<Expr> = Vec::new();
     for word in input.split_ascii_whitespace() {
-        match word.parse::<i64>() {
-            Ok(i) => stack.push(Expr::Number(i)),
-            Err(_) => match word {
-                "sqr" => {
-                    if let Some(first) = stack.pop() {
-                        stack.push(Expr::Square(Box::new(first)))
-                    } else {
-                        return Err(ParseError::NoAvailableNumbers);
-                    };
-                }
-                _ => {
+        match word {
+            "sqr" => {
+                if let Some(first) = stack.pop() {
+                    stack.push(Expr::Square(Box::new(first)))
+                } else {
+                    return Err(ParseError::NoAvailableNumbers);
+                };
+            }
+            _ => match word.parse::<i64>() {
+                Ok(i) => stack.push(Expr::Number(i)),
+                Err(_) => {
                     if let (Some(first), Some(last)) = (stack.pop(), stack.pop()) {
                         match word {
                             "+" => stack.push(Expr::Addition(Box::new(last), Box::new(first))),
@@ -84,7 +84,7 @@ pub fn parse(input: &str) -> Result<Expr, ParseError> {
                     }
                 }
             },
-        };
+        }
     }
     assert_eq!(stack.len(), 1);
     let res = stack.pop().unwrap();
